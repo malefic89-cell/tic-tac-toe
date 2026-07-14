@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Крестики-нолики</title>
+<style>
+  :root {
+    --bg: #12141a;
+    --surface: #1c1f28;
+    --line: #2b2f3b;
+    --text: #e8eaf0;
+    --muted: #8b90a0;
+    --x-color: #5eb0ff;
+    --o-color: #ffb35e;
+    --win-bg: #24402e;
+    --win-border: #4caf7d;
+    --accent: #3a67ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+
+  .modes {
+    display: flex;
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .modes button {
+    flex: 1;
+    padding: 10px 8px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .modes button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .score {
+    display: flex;
+    justify-content: space-between;
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+
+  .score .item {
+    text-align: center;
+    flex: 1;
+  }
+
+  .score .label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+
+  .score .value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .score .x .value { color: var(--x-color); }
+  .score .o .value { color: var(--o-color); }
+
+  .status {
+    text-align: center;
+    font-size: 0.95rem;
+    color: var(--muted);
+    min-height: 1.4em;
+  }
+
+  .status .x { color: var(--x-color); font-weight: 600; }
+  .status .o { color: var(--o-color); font-weight: 600; }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    aspect-ratio: 1;
+  }
+
+  .cell {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-size: clamp(2rem, 12vw, 3.2rem);
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.3s, transform 0.05s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cell:not(:disabled):hover { background: #232734; }
+  .cell:not(:disabled):active { transform: scale(0.96); }
+  .cell:disabled { cursor: default; }
+
+  .cell.x { color: var(--x-color); }
+  .cell.o { color: var(--o-color); }
+
+  .cell.win {
+    background: var(--win-bg);
+    border-color: var(--win-border);
+  }
+
+  .restart {
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .restart:hover { background: #232734; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Крестики-нолики</h1>
+
+  <div class="modes" role="group" aria-label="Режим игры">
+    <button id="mode-pvp" class="active">Два игрока</button>
+    <button id="mode-cpu">Против компьютера</button>
+  </div>
+
+  <div class="score">
+    <div class="item x">
+      <div class="label" id="label-x">Игрок X</div>
+      <div class="value" id="score-x">0</div>
+    </div>
+    <div class="item">
+      <div class="label">Ничьи</div>
+      <div class="value" id="score-draw">0</div>
+    </div>
+    <div class="item o">
+      <div class="label" id="label-o">Игрок O</div>
+      <div class="value" id="score-o">0</div>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="board" id="board"></div>
+
+  <button class="restart" id="restart">Заново</button>
+</div>
+
+<script>
+(function () {
+  const LINES = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6]
+  ];
+
+  const boardEl = document.getElementById('board');
+  const statusEl = document.getElementById('status');
+  const scoreXEl = document.getElementById('score-x');
+  const scoreOEl = document.getElementById('score-o');
+  const scoreDrawEl = document.getElementById('score-draw');
+  const labelXEl = document.getElementById('label-x');
+  const labelOEl = document.getElementById('label-o');
+  const modePvpBtn = document.getElementById('mode-pvp');
+  const modeCpuBtn = document.getElementById('mode-cpu');
+
+  let board, current, gameOver, vsCpu = false;
+  let score = { X: 0, O: 0, draw: 0 };
+  let cpuTimer = null;
+
+  const cells = [];
+  for (let i = 0; i < 9; i++) {
+    const cell = document.createElement('button');
+    cell.className = 'cell';
+    cell.addEventListener('click', () => onCellClick(i));
+    boardEl.appendChild(cell);
+    cells.push(cell);
+  }
+
+  function reset() {
+    clearTimeout(cpuTimer);
+    board = Array(9).fill(null);
+    current = 'X';
+    gameOver = false;
+    cells.forEach(c => {
+      c.textContent = '';
+      c.disabled = false;
+      c.className = 'cell';
+    });
+    updateStatus();
+  }
+
+  function setMode(cpu) {
+    vsCpu = cpu;
+    modePvpBtn.classList.toggle('active', !cpu);
+    modeCpuBtn.classList.toggle('active', cpu);
+    labelXEl.textContent = cpu ? 'Вы (X)' : 'Игрок X';
+    labelOEl.textContent = cpu ? 'Компьютер (O)' : 'Игрок O';
+    score = { X: 0, O: 0, draw: 0 };
+    renderScore();
+    reset();
+  }
+
+  function onCellClick(i) {
+    if (gameOver || board[i]) return;
+    if (vsCpu && current === 'O') return; // ход компьютера
+    makeMove(i);
+    if (!gameOver && vsCpu && current === 'O') {
+      cpuTimer = setTimeout(cpuMove, 400);
+    }
+  }
+
+  function makeMove(i) {
+    board[i] = current;
+    cells[i].textContent = current;
+    cells[i].classList.add(current.toLowerCase());
+    cells[i].disabled = true;
+
+    const winLine = findWin(board, current);
+    if (winLine) {
+      gameOver = true;
+      winLine.forEach(idx => cells[idx].classList.add('win'));
+      cells.forEach(c => c.disabled = true);
+      score[current]++;
+      renderScore();
+      statusEl.innerHTML = winnerText(current);
+      return;
+    }
+
+    if (board.every(Boolean)) {
+      gameOver = true;
+      score.draw++;
+      renderScore();
+      statusEl.textContent = 'Ничья';
+      return;
+    }
+
+    current = current === 'X' ? 'O' : 'X';
+    updateStatus();
+  }
+
+  function findWin(b, player) {
+    return LINES.find(line => line.every(i => b[i] === player)) || null;
+  }
+
+  // Компьютер играет разумно, но не идеально:
+  // выигрывает и блокирует, дальше — эвристика с элементом случайности.
+  function cpuMove() {
+    if (gameOver) return;
+    const free = board.map((v, i) => v === null ? i : -1).filter(i => i >= 0);
+    if (!free.length) return;
+
+    let move = findLineMove('O') // выиграть, если можно
+            ?? findLineMove('X'); // заблокировать игрока
+
+    if (move === null) {
+      // Иногда ходит наугад — чтобы его можно было обыграть
+      if (Math.random() < 0.25) {
+        move = free[Math.floor(Math.random() * free.length)];
+      } else if (board[4] === null) {
+        move = 4;
+      } else {
+        const corners = [0, 2, 6, 8].filter(i => board[i] === null);
+        const pool = corners.length ? corners : free;
+        move = pool[Math.floor(Math.random() * pool.length)];
+      }
+    }
+
+    makeMove(move);
+  }
+
+  function findLineMove(player) {
+    for (const line of LINES) {
+      const marks = line.map(i => board[i]);
+      if (marks.filter(m => m === player).length === 2 && marks.includes(null)) {
+        return line[marks.indexOf(null)];
+      }
+    }
+    return null;
+  }
+
+  function updateStatus() {
+    if (vsCpu) {
+      statusEl.innerHTML = current === 'X'
+        ? 'Ваш ход — <span class="x">X</span>'
+        : 'Компьютер думает…';
+    } else {
+      statusEl.innerHTML = `Ход: <span class="${current.toLowerCase()}">${current}</span>`;
+    }
+  }
+
+  function winnerText(player) {
+    if (vsCpu) {
+      return player === 'X' ? 'Вы победили! 🎉' : 'Победил компьютер';
+    }
+    return `Победил <span class="${player.toLowerCase()}">${player}</span>!`;
+  }
+
+  function renderScore() {
+    scoreXEl.textContent = score.X;
+    scoreOEl.textContent = score.O;
+    scoreDrawEl.textContent = score.draw;
+  }
+
+  document.getElementById('restart').addEventListener('click', reset);
+  modePvpBtn.addEventListener('click', () => setMode(false));
+  modeCpuBtn.addEventListener('click', () => setMode(true));
+
+  renderScore();
+  reset();
+})();
+</script>
+</body>
+</html>
