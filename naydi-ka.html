@@ -24,6 +24,31 @@
     50% { transform: rotate(3deg) scale(1.06); }
   }
   @keyframes spin-emoji { to { transform: rotate(360deg); } }
+  @keyframes love-shimmer {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+  }
+  @keyframes love-float {
+    0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+    50%      { transform: translateY(-10px) rotate(1.5deg); }
+  }
+  @keyframes heart-pulse {
+    0%   { transform: scale(1);    filter: drop-shadow(0 0 6px #ff0059); }
+    14%  { transform: scale(1.35); filter: drop-shadow(0 0 22px #ff2d78); }
+    28%  { transform: scale(1.05); filter: drop-shadow(0 0 10px #ff0059); }
+    42%  { transform: scale(1.3);  filter: drop-shadow(0 0 26px #ff2d78); }
+    70%  { transform: scale(1);    filter: drop-shadow(0 0 6px #ff0059); }
+    100% { transform: scale(1);    filter: drop-shadow(0 0 6px #ff0059); }
+  }
+  @keyframes sparkle-twinkle {
+    0%, 100% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+    50%      { opacity: 1; transform: scale(1.15) rotate(20deg); }
+  }
+  @keyframes float-heart-up {
+    0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+    15%  { opacity: 1; }
+    100% { transform: translateY(-120px) scale(1.2); opacity: 0; }
+  }
   @keyframes reel-flash {
     0%, 100% { background: rgba(0,0,0,0.55); }
     50% { background: rgba(255,255,0,0.25); }
@@ -50,6 +75,45 @@
     overflow-x: hidden;
     min-height: 100vh;
   }
+
+  .love-banner {
+    position: relative;
+    margin: 6px auto 20px;
+    padding: 14px 10px;
+    animation: love-float 3.2s ease-in-out infinite;
+  }
+  .love-banner .love-text {
+    display: inline-block;
+    font-size: clamp(26px, 8vw, 64px);
+    font-weight: 900;
+    letter-spacing: 1px;
+    -webkit-text-stroke: 1.5px #000;
+    background: linear-gradient(90deg,
+      #ff0059, #ff8c00, #ffee00, #6cff00, #00e5ff, #b400ff, #ff0059);
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: love-shimmer 4s linear infinite;
+    filter: drop-shadow(2px 3px 0 rgba(0,0,0,0.4));
+  }
+  .love-banner .heart {
+    display: inline-block;
+    font-size: clamp(28px, 8.5vw, 68px);
+    margin-left: 8px;
+    vertical-align: middle;
+    animation: heart-pulse 1.1s ease-in-out infinite;
+  }
+  .love-banner .sparkle {
+    position: absolute;
+    font-size: clamp(14px, 3vw, 24px);
+    pointer-events: none;
+    animation: sparkle-twinkle 1.8s ease-in-out infinite;
+  }
+  .love-banner .sparkle.s1 { top: 0;    left: 8%;  animation-delay: 0s;   }
+  .love-banner .sparkle.s2 { top: 12px; right: 6%; animation-delay: 0.5s; }
+  .love-banner .sparkle.s3 { bottom: 0; left: 22%; animation-delay: 0.9s; }
+  .love-banner .sparkle.s4 { bottom: 6px; right: 20%; animation-delay: 1.3s; }
 
   h1 {
     font-size: clamp(28px, 7vw, 58px);
@@ -195,6 +259,14 @@
 </style>
 </head>
 <body>
+  <div class="love-banner" id="loveBanner">
+    <span class="sparkle s1">✨</span>
+    <span class="sparkle s2">💖</span>
+    <span class="sparkle s3">⭐</span>
+    <span class="sparkle s4">🌟</span>
+    <span class="love-text">Я люблю Арину</span><span class="heart">❤️</span>
+  </div>
+
   <h1>НАЙДИ-КА 🔮</h1>
   <div class="subtitle">Пойди туда, не знаю куда — принеси то, не знаю что</div>
 
@@ -360,6 +432,29 @@
     goBtn.innerHTML = "ПОЙДИ ЕЩЁ! 🚀";
     busy = false;
   }
+
+  // Феерия: при клике на надпись вверх взлетают сердечки
+  const loveBanner = document.getElementById("loveBanner");
+  function emitHearts(x, y) {
+    const hearts = ["❤️", "💖", "💕", "💗", "💓", "✨"];
+    for (let i = 0; i < 12; i++) {
+      const h = document.createElement("div");
+      h.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+      h.style.position = "fixed";
+      h.style.left = (x + (Math.random() * 80 - 40)) + "px";
+      h.style.top = y + "px";
+      h.style.fontSize = (16 + Math.random() * 22).toFixed(0) + "px";
+      h.style.pointerEvents = "none";
+      h.style.zIndex = "1000";
+      h.style.animation = "float-heart-up " + (1.2 + Math.random() * 0.9).toFixed(2) + "s ease-out forwards";
+      document.body.appendChild(h);
+      setTimeout(() => h.remove(), 2200);
+    }
+  }
+  loveBanner.addEventListener("click", (e) => {
+    const rect = loveBanner.getBoundingClientRect();
+    emitHearts(e.clientX || rect.left + rect.width / 2, rect.bottom - 10);
+  });
 
   goBtn.addEventListener("click", quest);
   // Пробел — тоже кнопка «пойди»
