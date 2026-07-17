@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>НАЙДИ-КА 🔮 — поди туда, не знаю куда</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  @keyframes acid-bg {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes rainbow-text {
+    0%   { color: #ff0000; text-shadow: 3px 3px 0 #00ff00, -3px -3px 0 #0000ff; }
+    25%  { color: #ffff00; text-shadow: 3px 3px 0 #ff00ff, -3px -3px 0 #00ffff; }
+    50%  { color: #00ff00; text-shadow: 3px 3px 0 #ff0000, -3px -3px 0 #ffff00; }
+    75%  { color: #00ffff; text-shadow: 3px 3px 0 #0000ff, -3px -3px 0 #ff00ff; }
+    100% { color: #ff0000; text-shadow: 3px 3px 0 #00ff00, -3px -3px 0 #0000ff; }
+  }
+  @keyframes wobble {
+    0%, 100% { transform: rotate(-3deg) scale(1); }
+    50% { transform: rotate(3deg) scale(1.06); }
+  }
+  @keyframes spin-emoji { to { transform: rotate(360deg); } }
+  @keyframes reel-flash {
+    0%, 100% { background: rgba(0,0,0,0.55); }
+    50% { background: rgba(255,255,0,0.25); }
+  }
+  @keyframes pop-in {
+    0%   { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+    60%  { transform: scale(1.12) rotate(3deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  @keyframes fall {
+    to { transform: translateY(115vh) rotate(720deg); }
+  }
+
+  html, body { min-height: 100%; }
+
+  body {
+    font-family: "Comic Sans MS", "Trebuchet MS", cursive, sans-serif;
+    background: linear-gradient(120deg, #ff0080, #ff8c00, #40e0d0, #8a2be2, #00ff7f, #ff0080);
+    background-size: 400% 400%;
+    animation: acid-bg 14s ease infinite;
+    color: #fff;
+    text-align: center;
+    padding: 20px 14px 60px;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-size: clamp(28px, 7vw, 58px);
+    animation: rainbow-text 3s linear infinite;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    -webkit-text-stroke: 1px #000;
+  }
+
+  .subtitle {
+    font-size: clamp(13px, 3.4vw, 20px);
+    font-style: italic;
+    text-shadow: 2px 2px 0 #000;
+    margin-bottom: 22px;
+    opacity: 0.95;
+  }
+
+  .machine {
+    max-width: 640px;
+    margin: 0 auto;
+    background: rgba(0,0,0,0.35);
+    border: 4px dashed #fff;
+    border-radius: 22px;
+    padding: 20px 16px 26px;
+    box-shadow: 0 0 0 4px #000, 0 12px 40px rgba(0,0,0,0.4);
+  }
+
+  .reels {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .reel {
+    background: rgba(0,0,0,0.55);
+    border: 3px solid #ffff00;
+    border-radius: 14px;
+    padding: 14px 12px;
+    min-height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .reel.spinning { animation: reel-flash 0.28s linear infinite; }
+
+  .reel .label {
+    position: absolute;
+    top: 6px; left: 12px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    text-shadow: 1px 1px 0 #000;
+  }
+
+  .reel .value {
+    font-size: clamp(16px, 4.2vw, 24px);
+    font-weight: bold;
+    text-shadow: 2px 2px 0 #000;
+    padding-top: 8px;
+  }
+  .reel.settled .value { animation: pop-in 0.4s ease both; }
+
+  button#go {
+    font-family: inherit;
+    font-size: clamp(20px, 5.5vw, 30px);
+    font-weight: bold;
+    padding: 14px 34px;
+    border: 4px solid #000;
+    border-radius: 50px;
+    cursor: pointer;
+    background: #ffff00;
+    color: #ff0080;
+    text-shadow: 1px 1px 0 #fff;
+    box-shadow: 0 6px 0 #000;
+    transition: transform 0.08s, box-shadow 0.08s;
+    animation: wobble 1.6s ease-in-out infinite;
+  }
+  button#go:hover { filter: brightness(1.1); }
+  button#go:active { transform: translateY(6px); box-shadow: 0 0 0 #000; }
+  button#go:disabled { cursor: wait; opacity: 0.8; animation: none; }
+
+  .progress-wrap { margin-top: 26px; }
+  .progress-label {
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 0 #000;
+    margin-bottom: 6px;
+  }
+  .progress-bar {
+    height: 22px;
+    background: rgba(0,0,0,0.5);
+    border: 3px solid #fff;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00ff7f, #ffff00, #ff0080);
+    background-size: 200% 100%;
+    animation: acid-bg 3s linear infinite;
+    transition: width 0.5s ease;
+  }
+
+  .verdict {
+    margin-top: 18px;
+    font-size: clamp(14px, 3.6vw, 19px);
+    min-height: 26px;
+    font-weight: bold;
+    text-shadow: 2px 2px 0 #000;
+  }
+
+  .counter {
+    margin-top: 24px;
+    font-size: 13px;
+    opacity: 0.85;
+    text-shadow: 1px 1px 0 #000;
+  }
+
+  .footer-link {
+    display: inline-block;
+    margin-top: 18px;
+    color: #fff;
+    font-size: 13px;
+    text-decoration: underline;
+    text-shadow: 1px 1px 0 #000;
+  }
+
+  .confetti {
+    position: fixed;
+    top: -30px;
+    font-size: 24px;
+    pointer-events: none;
+    animation: fall linear forwards;
+    z-index: 999;
+  }
+
+  .spin-emoji { display: inline-block; animation: spin-emoji 0.6s linear infinite; }
+</style>
+</head>
+<body>
+  <h1>НАЙДИ-КА 🔮</h1>
+  <div class="subtitle">Пойди туда, не знаю куда — принеси то, не знаю что</div>
+
+  <div class="machine">
+    <div class="reels">
+      <div class="reel settled" id="reel-where">
+        <span class="label">Пойди туда →</span>
+        <span class="value">на край света</span>
+      </div>
+      <div class="reel settled" id="reel-what">
+        <span class="label">Найди то →</span>
+        <span class="value">то самое</span>
+      </div>
+      <div class="reel settled" id="reel-do">
+        <span class="label">И сделай →</span>
+        <span class="value">что-нибудь эдакое</span>
+      </div>
+    </div>
+
+    <button id="go">ПОЙДИ! 🚀</button>
+
+    <div class="progress-wrap">
+      <div class="progress-label">Прогресс поисков</div>
+      <div class="progress-bar"><div class="progress-fill" id="fill"></div></div>
+    </div>
+
+    <div class="verdict" id="verdict"></div>
+  </div>
+
+  <div class="counter">Выдано поручений: <span id="count">0</span> · Найдено: <span id="found">0</span></div>
+  <a class="footer-link" href="index.html">← вернуться к Крестикам-персикам 🍑</a>
+
+<script>
+  const WHERE = [
+    "за тридевять земель", "на кудыкину гору", "в тридесятое царство",
+    "туда, где раки зимуют", "за угол реальности", "в чулан у бабы-яги",
+    "на дно вчерашнего дня", "в подвал мироздания", "за седьмое небо",
+    "в overflow: hidden;", "на антресоль вселенной", "туда, откуда ноги растут",
+    "в межстрочный интервал", "за границу разумного", "в спам-папку судьбы"
+  ];
+  const WHAT = [
+    "то самое, ну ты понял", "неведому зверушку", "золотую середину",
+    "смысл этой затеи", "потерянную запятую", "здравый смысл (б/у)",
+    "философский булыжник", "закрывающую скобку )", "второй носок",
+    "квадратный корень из настроения", "прошлогодний снег",
+    "кнопку «отменить всё»", "чувство, что всё получится", "иголку в стоге сессий",
+    "недостающий commit"
+  ];
+  const DO = [
+    "и молча положи обратно", "и сделай вид, что так и было",
+    "и загадай желание", "и подари первому встречному дракону",
+    "и заверни в git stash", "и объяви национальным достоянием",
+    "и спрячь получше от себя же", "и переименуй в что-то солиднее",
+    "и торжественно закоммить", "и оставь TODO на потом",
+    "и станцуй с этим джигу", "и продай на аукционе несуществующего",
+    "и покорми этим кота", "и запости в резюме как навык",
+    "и тихо порадуйся"
+  ];
+  const VERDICTS = [
+    "🎉 Поручение выдано! Удачи, она понадобится.",
+    "🧭 Компас сломан, но направление задано.",
+    "🔮 Судьба одобрительно кивнула.",
+    "🐉 Дракон уже в курсе, торопись.",
+    "📜 Свиток запечатан. Обратной дороги нет.",
+    "✨ Задание настолько простое, что аж невозможное.",
+    "🕳️ Портал открыт. Не забудь зонт.",
+    "🍑 Крестики-персики желают удачи."
+  ];
+
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  const reels = {
+    where: { el: document.getElementById("reel-where"), pool: WHERE },
+    what:  { el: document.getElementById("reel-what"),  pool: WHAT  },
+    do:    { el: document.getElementById("reel-do"),    pool: DO    }
+  };
+  const goBtn   = document.getElementById("go");
+  const fill    = document.getElementById("fill");
+  const verdict = document.getElementById("verdict");
+  const countEl = document.getElementById("count");
+  const foundEl = document.getElementById("found");
+
+  let count = 0;
+  let found = 0;
+  let busy = false;
+
+  function setReel(reel, text, settled) {
+    const v = reel.el.querySelector(".value");
+    v.textContent = text;
+    reel.el.classList.toggle("settled", !!settled);
+  }
+
+  function spinReel(reel, duration) {
+    return new Promise((resolve) => {
+      reel.el.classList.add("spinning");
+      reel.el.classList.remove("settled");
+      const tick = setInterval(() => setReel(reel, pick(reel.pool), false), 70);
+      setTimeout(() => {
+        clearInterval(tick);
+        reel.el.classList.remove("spinning");
+        const finalText = pick(reel.pool);
+        // force reflow so the pop-in animation restarts every time
+        setReel(reel, finalText, false);
+        void reel.el.offsetWidth;
+        setReel(reel, finalText, true);
+        resolve(finalText);
+      }, duration);
+    });
+  }
+
+  // Прогресс, который честно никогда не доходит до 100% — как в сказке.
+  function teaseProgress() {
+    // 55–92%, потому что найти "то, не знаю что" на 100% нельзя by design
+    const target = 55 + Math.random() * 37;
+    fill.style.width = target.toFixed(1) + "%";
+  }
+
+  function confettiBurst() {
+    const emojis = ["🎉", "✨", "🔮", "🍑", "🌈", "🐉", "💫", "🧭"];
+    for (let i = 0; i < 26; i++) {
+      const c = document.createElement("div");
+      c.className = "confetti";
+      c.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      c.style.left = Math.random() * 100 + "vw";
+      c.style.animationDuration = (2 + Math.random() * 2).toFixed(2) + "s";
+      c.style.fontSize = (18 + Math.random() * 22).toFixed(0) + "px";
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4200);
+    }
+  }
+
+  async function quest() {
+    if (busy) return;
+    busy = true;
+    goBtn.disabled = true;
+    goBtn.innerHTML = 'Ищу… <span class="spin-emoji">🔄</span>';
+    verdict.textContent = "";
+    fill.style.width = "0%";
+
+    await Promise.all([
+      spinReel(reels.where, 900),
+      spinReel(reels.what,  1250),
+      spinReel(reels.do,    1600)
+    ]);
+
+    teaseProgress();
+    count++;
+    countEl.textContent = count;
+
+    // Иногда сказка сжаливается: 1 из 12 — «нашлось!»
+    const lucky = Math.floor(Math.random() * 12) === 0;
+    if (lucky) {
+      found++;
+      foundEl.textContent = found;
+      fill.style.width = "100%";
+      verdict.textContent = "🏆 НЕВЕРОЯТНО! Ты нашёл то, не знаю что! Занеси в летопись.";
+      confettiBurst();
+    } else {
+      verdict.textContent = pick(VERDICTS);
+    }
+
+    goBtn.disabled = false;
+    goBtn.innerHTML = "ПОЙДИ ЕЩЁ! 🚀";
+    busy = false;
+  }
+
+  goBtn.addEventListener("click", quest);
+  // Пробел — тоже кнопка «пойди»
+  document.addEventListener("keydown", (e) => {
+    if (e.code === "Space" && !busy) { e.preventDefault(); quest(); }
+  });
+</script>
+</body>
+</html>
