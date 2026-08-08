@@ -50,6 +50,20 @@
     50% { transform: scale(1.1); }
     70% { transform: scale(1.4); }
   }
+  @keyframes love-wave {
+    0%, 100% { transform: translateY(0) rotate(0) scale(1); }
+    25% { transform: translateY(-11px) rotate(-8deg) scale(1.18); }
+    50% { transform: translateY(0) rotate(0) scale(1); }
+    75% { transform: translateY(7px) rotate(8deg) scale(0.9); }
+  }
+  @keyframes love-glow {
+    0%, 100% { text-shadow: 0 0 10px #ff0055, 3px 3px 0 #ffff00, -3px -3px 0 #00ffff; }
+    33% { text-shadow: 0 0 28px #ff00ff, 3px 3px 0 #00ff00, -3px -3px 0 #ff8800; }
+    66% { text-shadow: 0 0 18px #00ffff, 3px 3px 0 #ff0000, -3px -3px 0 #ffff00; }
+  }
+  @keyframes love-rise {
+    to { transform: translate(var(--dx), -150px) rotate(var(--rot)); opacity: 0; }
+  }
   @keyframes pulse-border {
     0%, 100% { border-color: #ff00ff; box-shadow: 0 0 20px #ff00ff; }
     50% { border-color: #00ffff; box-shadow: 0 0 40px #00ff00; }
@@ -121,16 +135,30 @@
   }
 
   .love {
+    position: relative;
     text-align: center;
-    font-size: 1.3rem;
+    font-size: clamp(1.7rem, 7.5vw, 2.4rem);
+    line-height: 1.2;
     font-weight: 900;
     color: #ff2d78;
-    text-shadow: 2px 2px 0 #ffff00, -2px -2px 0 #00ffff;
+    animation: love-glow 1.6s ease-in-out infinite;
+  }
+  .love .ch {
+    display: inline-block;
+    animation: love-wave 1.4s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 0.07s);
   }
   .love .heart {
     display: inline-block;
     animation: heart-pulse 1.1s ease-in-out infinite;
-    filter: drop-shadow(0 0 8px #ff0055);
+    filter: drop-shadow(0 0 12px #ff0055);
+  }
+  .love .spark {
+    position: absolute;
+    bottom: 0;
+    z-index: 12;
+    pointer-events: none;
+    animation: love-rise linear forwards;
   }
 
   h1 {
@@ -513,6 +541,40 @@
       setTimeout(() => p.remove(), 1600);
     }
   }
+
+  // ---------- «Я ЛЮБЛЮ АРИНУ» ----------
+
+  // Каждая буква прыгает со своей задержкой — надпись идёт волной
+  const loveEl = document.querySelector('.love');
+  const loveText = 'Я люблю Арину';
+  loveEl.textContent = '';
+  Array.from(loveText).forEach((ch, i) => {
+    const s = document.createElement('span');
+    s.className = 'ch';
+    s.style.setProperty('--i', i);
+    s.textContent = ch === ' ' ? ' ' : ch;
+    loveEl.appendChild(s);
+  });
+  const heartEl = document.createElement('span');
+  heartEl.className = 'heart';
+  heartEl.textContent = ' ❤️';
+  loveEl.appendChild(heartEl);
+
+  // Из надписи вылетают сердечки
+  const SPARKS = ['❤️', '💖', '💕', '💗', '🍑'];
+  setInterval(() => {
+    if (document.hidden) return;
+    const s = document.createElement('span');
+    s.className = 'spark';
+    s.textContent = SPARKS[Math.floor(Math.random() * SPARKS.length)];
+    s.style.left = (8 + Math.random() * 84) + '%';
+    s.style.fontSize = (14 + Math.random() * 16) + 'px';
+    s.style.setProperty('--dx', (Math.random() * 70 - 35) + 'px');
+    s.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+    s.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
+    loveEl.appendChild(s);
+    setTimeout(() => s.remove(), 3200);
+  }, 420);
 
   // Бегущие строки из персиков
   const strip = ' 🍑 ПЕРСИКИ '.repeat(10);
